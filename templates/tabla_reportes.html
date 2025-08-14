@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<h1>Buscar y Filtrar</h1>
+<form method="GET" action="/reportes">
+    <label>Buscar:</label>
+    <input type="text" name="buscar" value="{{ request.args.get('buscar', '') }}" placeholder="Técnico, cliente, equipo...">
+    <br><br>
+
+    <label>Fecha inicio:</label>
+    <input type="date" name="fecha_inicio" value="{{ request.args.get('fecha_inicio', '') }}">
+
+    <label>Fecha fin:</label>
+    <input type="date" name="fecha_fin" value="{{ request.args.get('fecha_fin', '') }}">
+
+    <label>Especialista:</label>
+    <select name="especialista">
+        <option value="">Todos</option>
+        {% for esp in especialistas %}
+            <option value="{{ esp.id }}" {% if request.args.get('especialista')|int == esp.id %}selected{% endif %}>{{ esp.nombre }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Cliente:</label>
+    <select name="cliente">
+        <option value="">Todos</option>
+        {% for cli in clientes %}
+            <option value="{{ cli.id }}" {% if request.args.get('cliente')|int == cli.id %}selected{% endif %}>{{ cli.nombre }}</option>
+        {% endfor %}
+    </select>
+
+    <br><br>
+    <button type="submit">Aplicar filtros</button>
+    <button type="submit" formaction="/exportar_excel" formmethod="POST">Exportar a Excel</button>
+</form>
+<br><hr><br>
+<h1>Reportes Recibidos</h1>
+<table border="1" cellpadding="5">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Especialista</th>
+            <th>Cliente</th>
+            <th>Tipo de Servicio</th>
+            <th>Archivo</th>
+            <th>Fecha de Envío</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if reportes %}
+            {% for r in reportes %}
+            <tr>
+                <td data-label="ID">{{ r.id }}</td>
+                <td data-label="Fecha">{{ r.fecha }}</td>
+                <td data-label="Hora">{{ r.hora }}</td>
+                <td data-label="Especialista">{{ r.especialista }}</td>
+                <td data-label="Cliente">{{ r.cliente }}</td>
+                <td data-label="Tipo de Servicio">{{ r.tipo_servicio }}</td>
+                <td data-label="Archivo">
+                    {% if r.archivo_path %}
+                    <a href="{{ url_for('static', filename='reportes_generados/' ~ r.archivo_path) }}" download="_blank">Descargar</a>
+                    {% else %}
+                        No adjunto
+                    {% endif %}
+                </td>
+                <td data-label="Fecha de Envío">{{ r.fecha_envio }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr><td colspan="8">No se encontraron reportes con esos filtros.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

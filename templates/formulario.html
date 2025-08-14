@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Cargar Reporte{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="mensaje-exito">
+      <span class="palomita">✔</span> {{ messages[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<h1>Cargar Reporte de Servicio</h1>
+
+<form action="/subir" method="POST" enctype="multipart/form-data" class="formulario-principal">
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label>Cliente:</label>
+            <select name="cliente" id="cliente-select" onchange="actualizarNombreCliente()" required>
+                {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" data-nombre="{{ cliente.nombre }}">{{ cliente.nombre }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Campo oculto para guardar el nombre -->
+            <input type="hidden" name="nombre_cliente" id="nombre_cliente">
+        </div>
+
+        <div class="form-group">
+            <label>Especialista:</label>
+            <select name="especialista" id="especialista-select" onchange="actualizarNombreEspecialista()" required>
+                {% for e in especialistas %}
+                    <option value="{{ e.id }}" data-nombre="{{ e.nombre }}">{{ e.nombre }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Campo oculto -->
+            <input type="hidden" name="nombre_especialista" id="nombre_especialista">
+
+        </div>
+
+        <div class="form-group">
+            <label>Fecha del servicio:</label>
+            <input type="date" name="fecha" required>
+        </div>
+
+        <div class="form-group">
+            <label>Hora:</label>
+            <input type="time" name="hora">
+        </div>
+
+        <div class="form-group">
+            <label>Localización:</label>
+            <input type="text" name="localizacion">
+        </div>
+
+        <div class="form-group">
+            <label>Equipo:</label>
+            <input type="text" name="equipo">
+        </div>
+
+        <div class="form-group">
+            <label>Jurisdicción:</label>
+            <input type="text" name="jurisdiccion">
+        </div>
+
+        <div class="form-group">
+            <label>Tipo de equipo:</label>
+            <input type="text" name="equipo_tipo">
+        </div>
+
+        <div class="form-group">
+            <label>Marca:</label>
+            <input type="text" name="marca">
+        </div>
+
+        <div class="form-group">
+            <label>Modelo:</label>
+            <input type="text" name="modelo">
+        </div>
+
+        <div class="form-group">
+            <label>Número de serie:</label>
+            <input type="text" name="numero_serie">
+        </div>
+
+        <div class="form-group">
+            <label>Certificador:</label>
+            <select name="certificador_select" id="certificador_select" onchange="mostrarCampoOtroCertificador()">
+                <option value="">-- Seleccionar --</option>
+                {% for c in coordinadores %}
+                    <option value="{{ c.nombre }}">{{ c.nombre }}</option>
+                {% endfor %}
+                <option value="otro">Otro</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="campo_otro_certificador" style="display: none;">
+            <label>Especificar otro:</label>
+            <input type="text" name="certificador_manual">
+        </div>
+
+        <div class="form-group">
+            <label>Coordinador o Supervisor:</label>
+            <input type="text" name="coordinador_supervisor">
+        </div>
+
+        <div class="form-group">
+            <label>Tipo de servicio:</label>
+            <select name="tipo_servicio" required>
+                <option value="">-- Seleccionar --</option>
+                <option>Programado</option>
+                <option>Preventivo</option>
+                <option>Correctivo</option>
+                <option>Inspección</option>
+                <option>Formación</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Descripción de actividades realizadas:</label><br>
+            <textarea name="descripcion_actividades" rows="4" required></textarea><br><br>
+
+            <label>Refacciones/Herramientas utilizadas:</label><br>
+            <textarea name="notas" rows="4" ></textarea><br><br>
+            </div>
+
+        <div class="form-group">
+            <button type="submit">Cargar Reporte</button>
+        </div>
+
+    </div>
+</form>
+
+<script src="{{ url_for('static', filename='js/funciones.js') }}"></script>
+{% endblock %}

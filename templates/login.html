@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<div class="login-box">
+    <h2>Iniciar sesión</h2>
+
+    <form method="POST" action="/login">
+        <label>Usuario:</label>
+        <input type="text" name="usuario" required><br><br>
+        <label>Contraseña:</label>
+        <input type="password" name="contraseña" required><br><br>
+        <button type="submit">Entrar</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li style="color: red">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <hr>
+    <p class="texto-cargar">¿Eres técnico y necesitas enviar un reporte?</p>
+    <a href="{{ url_for('formulario') }}">
+        <button type="button" class="boton-cargar">📄 Cargar Reporte</button>
+    </a>
+</div>
+{% endblock %}

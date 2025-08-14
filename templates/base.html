@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Sistema de Reportes{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo.css') }}">
+</head>
+<body>
+    {% if session.get('usuario') %}
+        <div class="logout-barra">
+            <span>Sesión: {{ session['usuario'] }} ({{ session['rol'] }})</span>
+            <a href="{{ url_for('logout') }}" class="logout-boton">Cerrar sesión</a>
+        </div>
+    {% endif %}
+
+    <div class="encabezado-logos">
+        <div class="logo-izquierda">
+            <img src="{{ url_for('static', filename='img/LogoATM.png') }}" alt="Logo Izquierda">
+        </div>
+
+        <div class="titulo-central">
+            <h1>Sistema de Reportes de Servicio</h1>
+        </div>
+
+        <div class="logo-derecha">
+            <div class="logo-arriba">
+                <img src="{{ url_for('static', filename='img/ISO-9001.png') }}" alt="Logo Arriba">
+            </div>
+            <div class="logo-abajo">
+                <img src="{{ url_for('static', filename='img/ISO-14001.png') }}" alt="Logo Abajo Izq">
+                <img src="{{ url_for('static', filename='img/ISO-45001.png') }}" alt="Logo Abajo Der">
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="contenido">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

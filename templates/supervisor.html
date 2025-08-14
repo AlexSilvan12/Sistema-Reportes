@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel del Supervisor{% endblock %}
+
+{% block content %}
+<h1>Reportes Pendientes de Autorización</h1>
+
+<table border="1" cellpadding="5">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Especialista</th>
+            <th>Cliente</th>
+            <th>Tipo de Servicio</th>
+            <th>Archivo</th>
+            <th>Comentario</th>
+<th>Acción</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in reportes %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.hora }}</td>
+            <td>{{ r.especialista }}</td>
+            <td>{{ r.cliente }}</td>
+            <td>{{ r.tipo_servicio }}</td>
+            <td>
+                {% if r.archivo_path %}
+                    <a href="{{ url_for('static', filename='reportes_generados/' ~ r.archivo_path) }}" target="_blank">📎 Ver archivo</a>
+                {% else %}
+                    <span style="color: gray;">Sin adjunto</span>
+                {% endif %}
+            </td>
+
+            <td>
+                <form method="POST" action="/autorizar_reporte/{{ r.id }}">
+                    <input type="text" name="comentario" placeholder="Comentario" maxlength="100" class="comentario-input">
+            </td>
+            <td>
+                    <button type="submit" class="boton-autorizar">Autorizar</button>
+                </form>
+            </td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
