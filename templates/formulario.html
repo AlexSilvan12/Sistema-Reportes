@@ -17,6 +17,7 @@
 <form action="/subir" method="POST" enctype="multipart/form-data" class="formulario-principal">
     <div class="form-grid">
 
+        <!-- Cliente -->
         <div class="form-group">
             <label>Cliente:</label>
             <select name="cliente" id="cliente-select" onchange="actualizarNombreCliente()" required>
@@ -24,11 +25,10 @@
                     <option value="{{ cliente.id }}" data-nombre="{{ cliente.nombre }}">{{ cliente.nombre }}</option>
                 {% endfor %}
             </select>
-
-            <!-- Campo oculto para guardar el nombre -->
             <input type="hidden" name="nombre_cliente" id="nombre_cliente">
         </div>
 
+        <!-- Especialista -->
         <div class="form-group">
             <label>Especialista:</label>
             <select name="especialista" id="especialista-select" onchange="actualizarNombreEspecialista()" required>
@@ -36,10 +36,7 @@
                     <option value="{{ e.id }}" data-nombre="{{ e.nombre }}">{{ e.nombre }}</option>
                 {% endfor %}
             </select>
-
-            <!-- Campo oculto -->
             <input type="hidden" name="nombre_especialista" id="nombre_especialista">
-
         </div>
 
         <div class="form-group">
@@ -124,16 +121,43 @@
             <label>Descripción de actividades realizadas:</label><br>
             <textarea name="descripcion_actividades" rows="4" required></textarea><br><br>
 
-            <label>Refacciones/Herramientas utilizadas:</label><br>
-            <textarea name="notas" rows="4" ></textarea><br><br>
-            </div>
+            <label>Herramientas utilizadas:</label><br>
+            <textarea name="notas" rows="4"></textarea><br><br>
+        </div>
 
+        <!-- Refacciones utilizadas -->
         <div class="form-group">
+            <label>Refacciones utilizadas:</label>
+            <div id="refacciones-container">
+                <div class="refaccion-item">
+                    <input type="text" name="refaccion_nombre[]" placeholder="Nombre de la refacción">
+                    <input type="number" name="refaccion_cantidad[]" placeholder="Cantidad" min="1">
+                    <input type="text" name="refaccion_obs[]" placeholder="No. Parte">
+                </div>
+            </div>
+            <button type="button" onclick="agregarRefaccion()">+ Agregar otra refacción</button>
+        </div>
+
+        <div class="form-group full-width">
             <button type="submit">Cargar Reporte</button>
         </div>
 
     </div>
 </form>
+
+<script>
+function agregarRefaccion() {
+    let container = document.getElementById('refacciones-container');
+    let div = document.createElement('div');
+    div.classList.add('refaccion-item');
+    div.innerHTML = `
+        <input type="text" name="refaccion_nombre[]" placeholder="Nombre de la refacción">
+        <input type="number" name="refaccion_cantidad[]" placeholder="Cantidad" min="1">
+        <input type="text" name="refaccion_obs[]" placeholder="Observaciones">
+    `;
+    container.appendChild(div);
+}
+</script>
 
 <script src="{{ url_for('static', filename='js/funciones.js') }}"></script>
 {% endblock %}

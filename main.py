@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytz
 from flask import Flask, flash, redirect, render_template, request
-from werkzeug.utils import secure_filename
+import io
 import sqlite3
 import os
 import pandas as pd
@@ -124,6 +124,27 @@ def subir():
         '',  # ← archivo_path ahora está vacío
         fecha_envio, descripcion, notas
     ))
+    # Guardar el id del reporte recién creado
+    reporte_id = cursor.lastrowid
+
+    # Listas que vienen del formulario (nombres con [])
+    nombres = request.form.getlist('refaccion_nombre[]')
+    cantidades = request.form.getlist('refaccion_cantidad[]')
+    observaciones = request.form.getlist('refaccion_obs[]')
+
+    # Insertar cada refacción usada en la tabla refacciones_servicio
+    for nombre, cantidad, obs in zip(nombres, cantidades, observaciones):
+        if nombre.strip():  # solo si el nombre no está vacío
+            # cantidad segura a entero (por defecto 1)
+            try:
+                qty = int(cantidad) if cantidad else 1
+            except ValueError:
+                qty = 1
+
+            cursor.execute("""
+                INSERT INTO refacciones_servicio (reporte_id, nombre_refaccion, cantidad, Num_Parte)
+                VALUES (?, ?, ?, ?)
+            """, (reporte_id, nombre.strip(), qty, (obs or '').strip()))
 
     conn.commit()
     conn.close()
@@ -187,7 +208,8 @@ def subir():
     nombre_archivo = f"Reporte_{data['fecha']}_{nombre_especialista}.docx"
     output_path = os.path.join(output_dir, nombre_archivo)
     documento.save(output_path)
-
+    ###Guardar el reporte en el servidor para consulta de RRHH y descargar directamente en el dispositvo
+    ###del Tecnico.
     # Generar ruta PDF
     pdf_output_path = output_path.replace(".docx", ".pdf")
 
@@ -348,7 +370,7 @@ def exportar_excel():
     if df.empty:
         return "No hay datos para exportar."
 
-    resumen = df.groupby(['tecnico', 'puesto'])['fecha'].nunique().reset_index()
+    resumen = df.groupby(['Técnico', 'Puesto'])['fecha'].nunique().reset_index()
     resumen.rename(columns={'fecha': 'Días entregados'}, inplace=True)
 
     from datetime import datetime
@@ -388,31 +410,125 @@ def exportar_excel():
     output.seek(0)
     return send_file(output, download_name='resumen_filtrado.xlsx', as_attachment=True)
 
-@app.route('/supervisor')
-def vista_supervisor():
-    if 'rol' not in session or session['rol'] != 'Supervisor':
-        return redirect('/login')
-    
+
+@app.route('/supervisor', methods=['GET'])
+def supervisor():
+    buscar = request.args.get('buscar', '')
+    fecha_inicio = request.args.get('fecha_inicio', '')
+    fecha_fin = request.args.get('fecha_fin', '')
+    especialista = request.args.get('especialista', '')
+    cliente = request.args.get('cliente', '')
+
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT r.id, r.fecha, r.hora, r.tipo_servicio,
-        c.nombre AS cliente, e.nombre AS especialista,
-        r.archivo_path
-
+    query = """
+        SELECT r.id, r.fecha, r.hora, e.nombre as especialista, c.nombre as cliente, 
+               r.tipo_servicio, r.archivo_path
         FROM reportes_servicio r
-        JOIN clientes c ON r.cliente_id = c.id
         JOIN especialistas e ON r.especialista_id = e.id
-        WHERE r.estado = 'pendiente'
-        ORDER BY r.fecha DESC
-    ''')
+        JOIN clientes c ON r.cliente_id = c.id
+        WHERE r.estado <> 'Autorizado'
+    """
+    params = []
+
+    if buscar:
+        query += " AND (e.nombre LIKE ? OR c.nombre LIKE ? OR r.tipo_servicio LIKE ?)"
+        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+
+    if fecha_inicio:
+        query += " AND r.fecha >= ?"
+        params.append(fecha_inicio)
+
+    if fecha_fin:
+        query += " AND r.fecha <= ?"
+        params.append(fecha_fin)
+
+    if especialista:
+        query += " AND r.especialista_id = ?"
+        params.append(especialista)
+
+    if cliente:
+        query += " AND r.cliente_id = ?"
+        params.append(cliente)
+
+    query += " ORDER BY r.fecha DESC"
+
+    cursor.execute(query, params)
     reportes = cursor.fetchall()
+
+    # Cargar listas de especialistas y clientes para los filtros
+    especialistas = cursor.execute("SELECT id, nombre FROM especialistas").fetchall()
+    clientes = cursor.execute("SELECT id, nombre FROM clientes").fetchall()
+
     conn.close()
 
-    return render_template('supervisor.html', reportes=reportes)
+    return render_template(
+        "supervisor.html",
+        reportes=reportes,
+        especialistas=especialistas,
+        clientes=clientes
+    )
 
+
+@app.route('/exportar_refacciones', methods=['POST'])
+def exportar_refacciones():
+    buscar = request.form.get('buscar', '')
+    fecha_inicio = request.form.get('fecha_inicio', '')
+    fecha_fin = request.form.get('fecha_fin', '')
+    especialista = request.form.get('especialista', '')
+    cliente = request.form.get('cliente', '')
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = """
+        SELECT r.id as reporte_id, r.fecha, e.nombre as especialista, c.nombre as cliente,
+               rs.nombre_refaccion, rs.cantidad
+        FROM refacciones_servicio rs
+        JOIN reportes_servicio r ON rs.reporte_id = r.id
+        JOIN especialistas e ON r.especialista_id = e.id
+        JOIN clientes c ON r.cliente_id = c.id
+        WHERE 1=1
+    """
+    params = []
+
+    if buscar:
+        query += " AND (e.nombre LIKE ? OR c.nombre LIKE ? OR rs.nombre_refaccion LIKE ?)"
+        params.extend([f"%{buscar}%", f"%{buscar}%", f"%{buscar}%"])
+
+    if fecha_inicio:
+        query += " AND r.fecha >= ?"
+        params.append(fecha_inicio)
+
+    if fecha_fin:
+        query += " AND r.fecha <= ?"
+        params.append(fecha_fin)
+
+    if especialista:
+        query += " AND r.especialista_id = ?"
+        params.append(especialista)
+
+    if cliente:
+        query += " AND r.cliente_id = ?"
+        params.append(cliente)
+
+    query += " ORDER BY r.fecha DESC"
+
+    df = pd.read_sql_query(query, conn, params=params)
+    conn.close()
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name="Refacciones")
+
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="refacciones_servicio.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 @app.route('/autorizar_reporte/<int:reporte_id>', methods=['POST'])
 def autorizar_reporte(reporte_id):

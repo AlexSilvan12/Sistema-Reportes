@@ -3,6 +3,40 @@
 {% block title %}Panel del Supervisor{% endblock %}
 
 {% block content %}
+<h1>Filtrar Reportes</h1>
+<form method="GET" action="/supervisor">
+    <label>Buscar:</label>
+    <input type="text" name="buscar" value="{{ request.args.get('buscar', '') }}" placeholder="Técnico, cliente, servicio...">
+
+    <label>Fecha inicio:</label>
+    <input type="date" name="fecha_inicio" value="{{ request.args.get('fecha_inicio', '') }}">
+
+    <label>Fecha fin:</label>
+    <input type="date" name="fecha_fin" value="{{ request.args.get('fecha_fin', '') }}">
+
+    <label>Especialista:</label>
+    <select name="especialista">
+        <option value="">Todos</option>
+        {% for esp in especialistas %}
+            <option value="{{ esp[0] }}" {% if request.args.get('especialista')|int == esp[0] %}selected{% endif %}>{{ esp[1] }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Cliente:</label>
+    <select name="cliente">
+        <option value="">Todos</option>
+        {% for cli in clientes %}
+            <option value="{{ cli[0] }}" {% if request.args.get('cliente')|int == cli[0] %}selected{% endif %}>{{ cli[1] }}</option>
+        {% endfor %}
+    </select>
+
+    <br><br>
+    <button type="submit">Aplicar filtros</button>
+    <button type="submit" formaction="/exportar_refacciones" formmethod="POST">Exportar a refacciones a Excel</button>
+</form>
+
+<br><hr><br>
+
 <h1>Reportes Pendientes de Autorización</h1>
 
 <table border="1" cellpadding="5">
@@ -16,36 +50,33 @@
             <th>Tipo de Servicio</th>
             <th>Archivo</th>
             <th>Comentario</th>
-<th>Acción</th>
-
+            <th>Acción</th>
         </tr>
     </thead>
     <tbody>
         {% for r in reportes %}
         <tr>
-            <td>{{ r.id }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.hora }}</td>
-            <td>{{ r.especialista }}</td>
-            <td>{{ r.cliente }}</td>
-            <td>{{ r.tipo_servicio }}</td>
+            <td>{{ r[0] }}</td>
+            <td>{{ r[1] }}</td>
+            <td>{{ r[2] }}</td>
+            <td>{{ r[3] }}</td>
+            <td>{{ r[4] }}</td>
+            <td>{{ r[5] }}</td>
             <td>
-                {% if r.archivo_path %}
-                    <a href="{{ url_for('static', filename='reportes_generados/' ~ r.archivo_path) }}" target="_blank">📎 Ver archivo</a>
+                {% if r[6] %}
+                    <a href="{{ url_for('static', filename='reportes_generados/' ~ r[6]) }}" target="_blank">📎 Ver archivo</a>
                 {% else %}
                     <span style="color: gray;">Sin adjunto</span>
                 {% endif %}
             </td>
-
             <td>
-                <form method="POST" action="/autorizar_reporte/{{ r.id }}">
+                <form method="POST" action="/autorizar_reporte/{{ r[0] }}">
                     <input type="text" name="comentario" placeholder="Comentario" maxlength="100" class="comentario-input">
             </td>
             <td>
                     <button type="submit" class="boton-autorizar">Autorizar</button>
                 </form>
             </td>
-
         </tr>
         {% endfor %}
     </tbody>
